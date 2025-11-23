@@ -1,95 +1,37 @@
-import csv
-from typing import List
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship
 
-class Movie:
-    def __init__(self, movieId: int, title: str, genres: str):
-        self.movieId = movieId
-        self.title = title
-        self.genres = genres
+Base = declarative_base()
 
-    def to_dict(self):
-        return self.__dict__
+class Movie(Base):
+    __tablename__ = "movies"
+    movieId = Column(Integer, primary_key=True)
+    title = Column(String)
+    genres = Column(String)
+    links = relationship("Link", back_populates="movie")
+    ratings = relationship("Rating", back_populates="movie")
+    tags = relationship("Tag", back_populates="movie")
 
-def load_movies_from_csv(file_path: str) -> List[Movie]:
-    movies = []
-    with open(file_path, encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            movie = Movie(
-                movieId=int(row["movieId"]),
-                title=row["title"],
-                genres=row["genres"]
-            )
-            movies.append(movie)
-    return movies
+class Link(Base):
+    __tablename__ = "links"
+    movieId = Column(Integer, ForeignKey("movies.movieId"), primary_key=True)
+    imdbId = Column(String)
+    tmdbId = Column(String)
+    movie = relationship("Movie", back_populates="links")
 
-class Link:
-    def __init__(self, movieId: int, imdbId: int, tmdbId: int):
-        self.movieId = movieId
-        self.imdbId = imdbId
-        self.tmdbId = tmdbId
+class Rating(Base):
+    __tablename__ = "ratings"
+    userId = Column(Integer, primary_key=True)
+    movieId = Column(Integer, ForeignKey("movies.movieId"), primary_key=True)
+    rating = Column(Float)
+    timestamp = Column(Integer)
+    movie = relationship("Movie", back_populates="ratings")
 
-    def to_dict(self):
-        return self.__dict__
-
-def load_links_from_csv(file_path: str):
-    links = []
-    with open(file_path, encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            link = Link(
-                movieId=int(row["movieId"]),
-                imdbId=int(row["imdbId"]),
-                tmdbId=row["tmdbId"]
-            )
-            links.append(link)
-    return links
-
-# Аналогично Rating и Tag
-class Rating:
-    def __init__(self, userId: int, movieId: int, rating: float, timestamp: int):
-        self.userId = userId
-        self.movieId = movieId
-        self.rating = rating
-        self.timestamp = timestamp
-
-    def to_dict(self):
-        return self.__dict__
-
-def load_ratings_from_csv(file_path: str):
-    ratings = []
-    with open(file_path, encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            rating = Rating(
-                userId=int(row["userId"]),
-                movieId=int(row["movieId"]),
-                rating=float(row["rating"]),
-                timestamp=int(row["timestamp"])
-            )
-            ratings.append(rating)
-    return ratings
-
-class Tag:
-    def __init__(self, userId: int, movieId: int, tag: str, timestamp: int):
-        self.userId = userId
-        self.movieId = movieId
-        self.tag = tag
-        self.timestamp = timestamp
-
-    def to_dict(self):
-        return self.__dict__
-
-def load_tags_from_csv(file_path: str):
-    tags = []
-    with open(file_path, encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            tag = Tag(
-                userId=int(row["userId"]),
-                movieId=int(row["movieId"]),
-                tag=row["tag"],
-                timestamp=int(row["timestamp"])
-            )
-            tags.append(tag)
-    return tags
+class Tag(Base):
+    __tablename__ = "tags"
+    id = Column(Integer, primary_key=True, autoincrement=True)  # автоинкрементный ID
+    userId = Column(Integer)
+    movieId = Column(Integer, ForeignKey("movies.movieId"))
+    tag = Column(String)
+    timestamp = Column(Integer)
+    movie = relationship("Movie", back_populates="tags")
