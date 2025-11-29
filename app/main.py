@@ -1,44 +1,31 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-
-from app.database import SessionLocal
-from app.models import Movie, Link, Rating, Tag
-
-app = FastAPI()
-
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+from fastapi import FastAPI
+from app.routers import movies, links, ratings, tags
 
 
+app = FastAPI(
+    title="Movies API",
+    version="1.0.0",
+    description="Prosty serwis API do pracy z bazą movies.db",
+)
+
+
+# Rejestracja routerów
+app.include_router(movies.router)
+app.include_router(links.router)
+app.include_router(ratings.router)
+app.include_router(tags.router)
+
+
+# Prosty endpoint kontrolny
 @app.get("/")
-def read_root():
-    return {"hello": "world"}
+def root():
+    return {
+        "status": "ok",
+        "message": "Movies API działa. Sprawdź /docs po więcej."
+    }
 
 
-@app.get("/movies")
-def get_movies(db: Session = Depends(get_db)):
-    movies = db.query(Movie).all()
-    return [{"movieId": m.movieId, "title": m.title, "genres": m.genres} for m in movies]
-
-
-@app.get("/links")
-def get_links(db: Session = Depends(get_db)):
-    links = db.query(Link).all()
-    return [{"movieId": l.movieId, "imdbId": l.imdbId, "tmdbId": l.tmdbId} for l in links]
-
-
-@app.get("/ratings")
-def get_ratings(db: Session = Depends(get_db)):
-    ratings = db.query(Rating).all()
-    return [{"userId": r.userId, "movieId": r.movieId, "rating": r.rating} for r in ratings]
-
-
-@app.get("/tags")
-def get_tags(db: Session = Depends(get_db)):
-    tags = db.query(Tag).all()
-    return [{"userId": t.userId, "movieId": t.movieId, "tag": t.tag} for t in tags]
+if __name__ == "__main__":
+    import uvicorn
+    # uruchomienie przez: python -m app.main
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)

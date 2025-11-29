@@ -1,10 +1,22 @@
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from app.models import get_engine
 
-DATABASE_URL = "sqlite:///./movies.db"
 
-engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
+# Tworzymy silnik bazy danych (SQLite w Twoim przypadku)
+engine = get_engine("movies.db")
+
+# Klasa zarządzająca sesjami z bazą
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Dependency dla FastAPI — tworzy i zamyka sesję
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
